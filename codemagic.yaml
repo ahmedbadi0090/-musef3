@@ -6,7 +6,7 @@ workflows:
     environment:
       xcode: latest
       cocoapods: default
-      node: 22 # <-- تم التحديث إلى Node 22
+      node: 22
     scripts:
       - name: Install npm dependencies
         script: |
@@ -16,14 +16,12 @@ workflows:
         script: |
           cd frontend
           npm run build
-      - name: Sync Capacitor iOS
+      - name: Add and Sync Capacitor iOS
         script: |
           cd frontend
+          # إضافة منصة iOS إن لم تكن مضافة، ومزامنة الملفات والـ Pods تلقائياً
+          npx cap add ios || true
           npx cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd frontend/ios/App
-          pod install
       - name: Build iOS app for Simulator (no code signing)
         script: |
           cd frontend/ios/App
@@ -38,4 +36,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - ahmedmbadi0090@gmail.com # <-- تم تصحيح gmai.com إلى gmail.com
+          - ahmedmbadi0090@gmail.com
