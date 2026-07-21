@@ -6,7 +6,7 @@ workflows:
     environment:
       xcode: latest
       cocoapods: default
-      node: 20
+      node: 22 # <-- تم التحديث إلى Node 22
     scripts:
       - name: Install npm dependencies
         script: |
@@ -38,4 +38,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - ahmedmbadi0090@gmai.com
+          - ahmedmbadi0090@gmail.com # <-- تم تصحيح gmai.com إلى gmail.com
