@@ -23,7 +23,7 @@ function getBaseUrl() {
   return 'http://127.0.0.1:8000'; // متصفح الويب أثناء التطوير
 }
 
-const BASE_URL =  'https://visitors-currently-frequencies-translated.trycloudflare.com';
+const BASE_URL = 'https://demographic-funny-breath-normally.trycloudflare.com';
 
 const API = axios.create({
   baseURL: BASE_URL,
