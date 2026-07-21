@@ -118,7 +118,7 @@ def analyze_injury(request):
             image_data = base64.b64encode(f.read()).decode('utf-8')
 
         from groq import Groq
-        groq_key = os.getenv("GROQ_API_KEY", "11")
+        groq_key = os.getenv("GROQ_API_KEY", "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")
         client = Groq(api_key=groq_key)
 
         # Check if there is any real injury detected
@@ -366,7 +366,7 @@ def medical_chat(request):
         return Response({"error": "الرجاء إدخال سؤالك"}, status=400)
 
     from groq import Groq
-    groq_key = os.getenv("GROQ_API_KEY","11")
+    groq_key = os.getenv("GROQ_API_KEY","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")
     client = Groq(api_key=groq_key)
 
     try:
