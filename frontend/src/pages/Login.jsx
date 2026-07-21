@@ -8,21 +8,44 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
- const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    // 🟢 1. منع السلوك الافتراضي الذي يسبب إعادة تحميل الشاشة
+    if (e) e.preventDefault()
+    
+    if (!form.username || !form.password) {
+      setError('يرجى كتابة اسم المستخدم وكلمة المرور')
+      return
+    }
+
     setLoading(true)
     setError('')
+
     try {
+      // 🟢 2. طلب تسجيل الدخول
       const res = await API.post('/api/login/', form)
-      localStorage.setItem('token', res.data.access)
-      localStorage.setItem('refresh', res.data.refresh)
+      
+      const accessToken = res.data.access || res.data.token
+      const refreshToken = res.data.refresh
 
-      const profileRes = await API.get('/api/profile/')
+      // 🟢 3. حفظ التوكن بالأسماء الموحدة في localStorage
+      localStorage.setItem('access_token', accessToken)
+      localStorage.setItem('token', accessToken)
+      if (refreshToken) localStorage.setItem('refresh', refreshToken)
+
+      // 🟢 4. طلب الملف الشخصي مع إرسال التوكن الجديد صراحة لضمان عدم رفضه
+      const profileRes = await API.get('/api/profile/', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+
       const role = profileRes.data.role
-      localStorage.setItem('role', role)
-      localStorage.setItem('username', profileRes.data.username)
-      sessionStorage.setItem('role', role)
-      sessionStorage.setItem('username', profileRes.data.username)
+      const username = profileRes.data.username
 
+      localStorage.setItem('role', role)
+      localStorage.setItem('username', username)
+      sessionStorage.setItem('role', role)
+      sessionStorage.setItem('username', username)
+
+      // 🟢 5. التوجيه النهائي
       if (role === 'volunteer' || role === 'government') {
         navigate('/dashboard')
       } else {
@@ -30,13 +53,15 @@ export default function Login() {
       }
     } catch (err) {
       console.error('LOGIN ERROR:', err)
-      console.error('Response:', err.response)
-      console.error('Message:', err.message)
 
       if (err.response) {
-        setError('خطأ من الخادم: ' + err.response.status + ' - بيانات غير صحيحة')
+        if (err.response.status === 401 || err.response.status === 400) {
+          setError('اسم المستخدم أو كلمة المرور غير صحيحة')
+        } else {
+          setError('خطأ من الخادم: ' + err.response.status)
+        }
       } else if (err.request) {
-        setError('فشل الاتصال بالخادم - تاكد ان Django شغال')
+        setError('فشل الاتصال بالخادم - تأكد أن Django والخادم شغالان')
       } else {
         setError('خطأ: ' + err.message)
       }
@@ -54,31 +79,33 @@ export default function Login() {
 
         {error && <div style={styles.error}>{error}</div>}
 
-        <div style={styles.field}>
-          <label style={styles.label}>اسم المستخدم</label>
-          <input
-            style={styles.input}
-            placeholder="أدخل اسم المستخدم"
-            value={form.username}
-            onChange={e => setForm({ ...form, username: e.target.value })}
-          />
-        </div>
+        {/* 🟢 تغليف العناصر داخل form ليعمل الضغط على Enter وتسجيل الدخول بسلاسة */}
+        <form onSubmit={handleSubmit} style={styles.formContainer}>
+          <div style={styles.field}>
+            <label style={styles.label}>اسم المستخدم</label>
+            <input
+              style={styles.input}
+              placeholder="أدخل اسم المستخدم"
+              value={form.username}
+              onChange={e => setForm({ ...form, username: e.target.value })}
+            />
+          </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>كلمة المرور</label>
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="أدخل كلمة المرور"
-            value={form.password}
-            onChange={e => setForm({ ...form, password: e.target.value })}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          />
-        </div>
+          <div style={styles.field}>
+            <label style={styles.label}>كلمة المرور</label>
+            <input
+              style={styles.input}
+              type="password"
+              placeholder="أدخل كلمة المرور"
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
 
-        <button style={styles.btnRed} onClick={handleSubmit} disabled={loading}>
-          {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
-        </button>
+          <button type="submit" style={styles.btnRed} disabled={loading}>
+            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
+          </button>
+        </form>
 
         <div style={styles.divider}><span>أو</span></div>
 
@@ -140,4 +167,13 @@ const styles = {
     fontSize: '16px', fontWeight: 600, cursor: 'pointer', width: '100%',
   },
   divider: { textAlign: 'center', color: '#9090a8', fontSize: '13px' },
+
+
+formContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    width: '100%'
+  },
+
 }
