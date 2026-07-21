@@ -3,4 +3,4 @@ venv_new/
 dataset/
 __pycache__/
 *.pt
-*.sqlite3
+*.sqlite3node_modules/
