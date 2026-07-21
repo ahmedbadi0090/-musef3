@@ -9,67 +9,62 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
-    // 🟢 1. منع السلوك الافتراضي الذي يسبب إعادة تحميل الشاشة
-    if (e) e.preventDefault()
-    
-    if (!form.username || !form.password) {
-      setError('يرجى كتابة اسم المستخدم وكلمة المرور')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      // 🟢 2. طلب تسجيل الدخول
-      const res = await API.post('/api/login/', form)
-      
-      const accessToken = res.data.access || res.data.token
-      const refreshToken = res.data.refresh
-
-      // 🟢 3. حفظ التوكن بالأسماء الموحدة في localStorage
-      localStorage.setItem('access_token', accessToken)
-      localStorage.setItem('token', accessToken)
-      if (refreshToken) localStorage.setItem('refresh', refreshToken)
-
-      // 🟢 4. طلب الملف الشخصي مع إرسال التوكن الجديد صراحة لضمان عدم رفضه
-      const profileRes = await API.get('/api/profile/', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      })
-
-      const role = profileRes.data.role
-      const username = profileRes.data.username
-
-      localStorage.setItem('role', role)
-      localStorage.setItem('username', username)
-      sessionStorage.setItem('role', role)
-      sessionStorage.setItem('username', username)
-
-      // 🟢 5. التوجيه النهائي
-      if (role === 'volunteer' || role === 'government') {
-        navigate('/dashboard')
-      } else {
-        navigate('/')
-      }
-    } catch (err) {
-      console.error('LOGIN ERROR:', err)
-
-      if (err.response) {
-        if (err.response.status === 401 || err.response.status === 400) {
-          setError('اسم المستخدم أو كلمة المرور غير صحيحة')
-        } else {
-          setError('خطأ من الخادم: ' + err.response.status)
-        }
-      } else if (err.request) {
-        setError('فشل الاتصال بالخادم - تأكد أن Django والخادم شغالان')
-      } else {
-        setError('خطأ: ' + err.message)
-      }
-    } finally {
-      setLoading(false)
-    }
+  if (e) e.preventDefault()
+  
+  if (!form.username || !form.password) {
+    setError('يرجى كتابة اسم المستخدم وكلمة المرور')
+    return
   }
 
+  setLoading(true)
+  setError('')
+
+  try {
+    // 🟢 1. طلب تسجيل الدخول فقط
+    const res = await API.post('/api/login/', form)
+    
+    console.log("استجابة السيرفر عند الدخول:", res.data)
+
+    const accessToken = res.data.access || res.data.token
+    const refreshToken = res.data.refresh
+
+    // 🟢 2. تخزين الـ Tokens
+    localStorage.setItem('access_token', accessToken)
+    localStorage.setItem('token', accessToken)
+    if (refreshToken) localStorage.setItem('refresh', refreshToken)
+
+    // 🟢 3. جلب الـ role والـ username من الـ res مباشرة أو من الـ user المخزن
+    const role = res.data.user?.role || 'user'
+    const username = res.data.user?.username || form.username
+
+    localStorage.setItem('role', role)
+    localStorage.setItem('username', username)
+    sessionStorage.setItem('role', role)
+    sessionStorage.setItem('username', username)
+
+    // 🟢 4. التوجيه المباشر
+    if (role === 'volunteer' || role === 'government') {
+      navigate('/dashboard')
+    } else {
+      navigate('/')
+    }
+
+  } catch (err) {
+    console.error('LOGIN ERROR:', err)
+
+    if (err.response) {
+      // إظهار نص الخطأ القادم من Django بوضوح
+      const serverMsg = err.response.data?.error || err.response.data?.detail
+      setError(serverMsg || `خطأ من الخادم: ${err.response.status}`)
+    } else if (err.request) {
+      setError('فشل الاتصال بالخادم - تأكد أن Django والخادم شغالان')
+    } else {
+      setError('خطأ: ' + err.message)
+    }
+  } finally {
+    setLoading(false)
+  }
+}
   return (
     <div style={styles.page}>
       <div style={styles.card}>
